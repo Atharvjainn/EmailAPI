@@ -6,3 +6,6 @@ langchain-community
 langchain-google-genai
 pydantic
 python-dotenv
+pinecone
+langchain-pinecone
+
