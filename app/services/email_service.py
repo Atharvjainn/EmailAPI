@@ -40,8 +40,9 @@ def store_emails(data):
                 namespace=user_id
             )
 
-        return {"embedded" : len(docs)}
-    
+        # return {"embedded" : len(docs)}
+        list = llm_work()
+        return list
 
 def llm_work():
     relevant_docs = retriever.invoke(
