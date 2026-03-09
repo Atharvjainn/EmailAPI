@@ -69,4 +69,5 @@ def prompt_template(context):
     Emails:
     {context}
     """
+    return prompt
 

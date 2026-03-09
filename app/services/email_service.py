@@ -4,6 +4,8 @@ from langchain_groq import ChatGroq
 from app.models.schemas import DeadlineList, prompt_template
 from app.db.pinecone_client import vector_store,retriever
 from app.lib.utils import calculate_urgency
+from dotenv import load_dotenv
+load_dotenv()
 
 #Embeddings model is with pinecone_client
 llm = ChatGroq(
