@@ -1,13 +1,14 @@
 from langchain_core.documents import Document
-from app.db.pinecone_client import index,vector_store
+from app.db.pinecone_client import index, vector_store, embeddings_model
 from langchain_groq import ChatGroq
+from langchain_pinecone import PineconeVectorStore
 from app.models.schemas import DeadlineList, prompt_template
-from app.db.pinecone_client import vector_store,retriever
 from app.lib.utils import calculate_urgency
+from app.db.mongoDB_client import results_collection
+import os
 from dotenv import load_dotenv
 load_dotenv()
 
-#Embeddings model is with pinecone_client
 llm = ChatGroq(
     model="meta-llama/llama-4-scout-17b-16e-instruct",
     temperature=0
@@ -16,48 +17,87 @@ structured_llm = llm.with_structured_output(DeadlineList)
 
 def store_emails(data):
     user_id = data.userId
+    all_ids = [email.id for email in data.emails]
+    existing = index.fetch(ids=all_ids,namespace=user_id)
+    existing_ids = set(existing.vectors.keys())
     docs = []
 
-    for email in data.emails:
-        result = index.fetch(ids=[email.id],namespace=user_id)
+    if set(all_ids) == existing_ids:
+        cached = results_collection.find_one({
+            "userId" : user_id
+        })
+        if cached : 
+            return sorted(cached['results'],key=lambda x : x['urgency'],reverse=True)
 
-        if result.vectors:
-            continue
+    for email in data.emails:
+       if email.id not in existing_ids: 
         docs.append(
             Document(
-                page_content=f"""
-                Subject : {email.subject}
-                Body : {email.body}
-                """,
+                page_content=f"Subject: {email.subject}\nBody: {email.body}",
                 metadata={
-                    "gmail_id" : email.id
+                    "gmail_id": email.id,
+                    "subject": email.subject  # ✅ store subject in metadata
                 }
             )
         )
 
-        if docs :
-            vector_store.add_documents(
-                docs,
-                ids=[doc.metadata['gmail_id'] for doc in docs],
-                namespace=user_id
-            )
+    # ✅ moved outside the loop — store all at once, then call LLM once
+    if docs:
+        vector_store.add_documents(
+            docs,
+            ids=[doc.metadata['gmail_id'] for doc in docs],
+            namespace=user_id
+        )
 
-        # return {"embedded" : len(docs)}
-        list = llm_work()
-        return list
+    results = llm_work(user_id)  # ✅ pass user_id for namespace
+    results_collection.update_one(
+        {"userId" : user_id},
+        {"$set" : {"userId" : user_id, "results" : results}},
+        upsert=True
+    )
 
-def llm_work():
+    return sorted(results, key=lambda x: x['urgency'], reverse=True)
+
+def llm_work(user_id: str):
+    # ✅ use a namespace-scoped retriever
+    user_vector_store = PineconeVectorStore(
+        index_name=os.getenv('PINECONE_INDEX_NAME'),
+        embedding=embeddings_model,
+        namespace=user_id
+    )
+    retriever = user_vector_store.as_retriever(
+        search_type='similarity',
+        search_kwargs={"k": 5}  # bumped to 5 to catch more relevant emails
+    )
+
     relevant_docs = retriever.invoke(
         "Find emails that mention deadlines, due dates, payments, submissions, exams, interviews."
     )
+
     context = ""
     for doc in relevant_docs:
-        context += f"\nSubject: {doc.metadata['subject']}\n"
-        context += doc.page_content
+        context += doc.page_content  # ✅ subject is already inside page_content
         context += "\n\n---\n\n"
+
+    if not context.strip():
+        return []  # ✅ guard: nothing relevant found
+
     prompt = prompt_template(context)
     response = structured_llm.invoke(prompt)
+
+    results = []
+
     for item in response.deadlines:
         item.urgency = calculate_urgency(item)
-    items_list = [item.model_dump() for item in response.deadlines]
-    return items_list
+        doc = item.model_dump()
+
+        if isinstance(doc.get("deadline"), (str)) is False and doc.get("deadline"):
+            doc["deadline"] = doc["deadline"].isoformat()
+
+        results.append(doc)
+
+    return results
+
+
+
+

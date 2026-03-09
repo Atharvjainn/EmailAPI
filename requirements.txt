@@ -8,4 +8,4 @@ pydantic
 python-dotenv
 pinecone
 langchain-pinecone
-
+pymongo

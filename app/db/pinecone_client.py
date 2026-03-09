@@ -15,7 +15,7 @@ embeddings_model = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
 
 vector_store = PineconeVectorStore(
     index_name=index_name,
-    embedding=embeddings_model
+    embedding=embeddings_model,
 )
 
 retriever = vector_store.as_retriever(search_type='similarity',search_kwargs={"k" : 2})
