@@ -13,9 +13,14 @@ index = pc.Index(index_name)
 
 embeddings_model = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
 
-vector_store = PineconeVectorStore(
-    index_name=index_name,
-    embedding=embeddings_model,
-)
+def get_vector_store(namespace : str):
+    return PineconeVectorStore(
+        index_name=index_name,
+        embedding=embeddings_model,
+        namespace=namespace
+    )
 
-retriever = vector_store.as_retriever(search_type='similarity',search_kwargs={"k" : 2})
+
+def get_retriever(namespace : str,k : int = 10):
+    return get_vector_store(namespace=namespace).as_retriever(search_type='similarity', search_kwargs={"k": k})
+

@@ -1,5 +1,5 @@
 from langchain_core.documents import Document
-from app.db.pinecone_client import index, vector_store, embeddings_model
+from app.db.pinecone_client import index,get_vector_store,get_retriever
 from langchain_groq import ChatGroq
 from langchain_pinecone import PineconeVectorStore
 from app.models.schemas import DeadlineList, prompt_template
@@ -15,8 +15,11 @@ llm = ChatGroq(
 )
 structured_llm = llm.with_structured_output(DeadlineList)
 
+
+
 def store_emails(data):
     user_id = data.userId
+    vector_store = get_vector_store(user_id)
     all_ids = [email.id for email in data.emails]
     existing = index.fetch(ids=all_ids,namespace=user_id)
     existing_ids = set(existing.vectors.keys())
@@ -60,20 +63,10 @@ def store_emails(data):
 
 def llm_work(user_id: str):
     # ✅ use a namespace-scoped retriever
-    user_vector_store = PineconeVectorStore(
-        index_name=os.getenv('PINECONE_INDEX_NAME'),
-        embedding=embeddings_model,
-        namespace=user_id
-    )
-    retriever = user_vector_store.as_retriever(
-        search_type='similarity',
-        search_kwargs={"k": 5}  # bumped to 5 to catch more relevant emails
-    )
-
+    retriever = get_retriever(user_id,k=10)
     relevant_docs = retriever.invoke(
         "Find emails that mention deadlines, due dates, payments, submissions, exams, interviews."
     )
-
     context = ""
     for doc in relevant_docs:
         context += doc.page_content  # ✅ subject is already inside page_content
