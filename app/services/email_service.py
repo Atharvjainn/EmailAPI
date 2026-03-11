@@ -65,10 +65,15 @@ def llm_work(user_id: str):
     # ✅ use a namespace-scoped retriever
     retriever = get_retriever(user_id,k=10)
     relevant_docs = retriever.invoke(
-        "Find emails that mention deadlines, due dates, payments, submissions, exams, interviews."
+    """
+    due by, deadline, submit before, payment due, 
+    expires on, last date, interview on, meeting scheduled,
+    exam on, appointment, please respond by, reminder
+    """
     )
     context = ""
     for doc in relevant_docs:
+        context += f"gmail_id: {doc.metadata['gmail_id']}\n"
         context += doc.page_content  # ✅ subject is already inside page_content
         context += "\n\n---\n\n"
 

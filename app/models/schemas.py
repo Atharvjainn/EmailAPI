@@ -13,6 +13,7 @@ class EmailRequest(BaseModel):
     emails : List[Email]
 
 class Deadline(BaseModel):
+  id : str = Field(description="The gmail_id of the email this deadline was extracted from")
   subject: str = Field(description="Email subject")
   deadline: date = Field(description="ISO date of deadline or event")
   types: Literal["Deadline","Event"] = Field(description="Specify whether it is an event or deadline")
@@ -61,6 +62,7 @@ def prompt_template(context):
     - 1–3 → Low (casual meeting, social event)
 
     For each item return:
+    - id (the gmail_id of the email)
     - subject
     - deadline (ISO format)
     - urgency
