@@ -82,8 +82,9 @@ def llm_work(user_id: str):
 
     prompt = prompt_template(context)
     response = structured_llm.invoke(prompt)
-
     results = []
+
+    
 
     for item in response.deadlines:
         item.urgency = calculate_urgency(item)

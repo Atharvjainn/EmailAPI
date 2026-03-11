@@ -25,51 +25,62 @@ class DeadlineList(BaseModel):
 
 def prompt_template(context):
     prompt = f"""
-    Today's date is {today}.
+Today's date is {today}.
 
-    You are an AI assistant that analyzes emails to detect time-sensitive information.
+You are an AI assistant that analyzes emails to detect time-sensitive information.
 
-    Your task is to extract either:
+Your task is to extract either:
 
-    1) DEADLINES
-    2) EVENTS
+1) DEADLINES
+2) EVENTS
 
-    Definitions:
+Definitions:
 
-    A DEADLINE means the recipient must COMPLETE, SUBMIT, PAY, RENEW,
-    RESPOND, or FINISH something BEFORE that date.
+A DEADLINE means the recipient must COMPLETE, SUBMIT, PAY, RENEW,
+RESPOND, or FINISH something BEFORE that date.
 
-    An EVENT is something that happens on a specific future date
-    (meeting, interview, exam, appointment, celebration, lunch, call, etc.)
-    but does NOT require completing something beforehand.
+An EVENT is something that happens on a specific future date
+(meeting, interview, exam, appointment, celebration, lunch, call, etc.)
+but does NOT require completing something beforehand.
 
-    Rules:
-    - If an event is recurring (e.g., every Monday), include only the NEXT upcoming occurrence based on today's date.
-    - Convert relative expressions like "next Friday", "tomorrow",
-      "in 3 days", "next week" into ISO format (YYYY-MM-DD)
-      based on today's date.
-    - Ignore emails with no future time reference.
-    - Only include future dates.
-    - Be conservative. Do not guess.
-    - When interpreting relative dates, calculate them strictly based on today's date.
-    - Do not guess vague phrases like "sometime next month". Ignore them.
-    - Return structured output only.
+Rules:
+- If an event is recurring (e.g., every Monday), include only the NEXT upcoming occurrence based on today's date.
+- Convert relative expressions like "next Friday", "tomorrow",
+  "in 3 days", "next week" into ISO format (YYYY-MM-DD)
+  based on today's date.
+- Ignore emails with no future time reference.
+- Only include future dates.
+- Be conservative. Do not guess.
+- When interpreting relative dates, calculate them strictly based on today's date.
+- Do not guess vague phrases like "sometime next month". Ignore them.
+- Return structured output only.
 
-    Urgency Guidelines (1–10 scale):
-    - 9–10 → Critical (within 1–2 days or severe consequence)
-    - 7–8 → High (within a week or important obligation)
-    - 4–6 → Medium (normal scheduled event or moderate importance)
-    - 1–3 → Low (casual meeting, social event)
+Urgency Guidelines (1–10 scale):
+- 9–10 → Critical (within 1–2 days or severe consequence)
+- 7–8 → High (within a week or important obligation)
+- 4–6 → Medium (normal scheduled event or moderate importance)
+- 1–3 → Low (casual meeting, social event)
 
-    For each item return:
-    - id (the gmail_id of the email)
-    - subject
-    - deadline (ISO format)
-    - urgency
-    - types (Event or Deadline)
+For each item return:
+- id (the gmail_id of the email)
+- subject
+- deadline (ISO format)
+- urgency
+- types (Event or Deadline)
 
-    Emails:
-    {context}
-    """
+IMPORTANT OUTPUT RULE:
+If no DEADLINES or EVENTS exist in the emails,
+return exactly:
+
+{{
+  "items": []
+}}
+
+Do not return null values.
+Do not fabricate data.
+
+Emails:
+{context}
+"""
     return prompt
 
