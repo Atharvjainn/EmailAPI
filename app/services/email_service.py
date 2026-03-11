@@ -39,7 +39,8 @@ def store_emails(data):
                 page_content=f"Subject: {email.subject}\nBody: {email.body}",
                 metadata={
                     "gmail_id": email.id,
-                    "subject": email.subject  # ✅ store subject in metadata
+                    "subject": email.subject,
+                    "received_At": email.receivedAt  # ✅ store receivedAt in metadata
                 }
             )
         )
@@ -74,6 +75,7 @@ def llm_work(user_id: str):
     context = ""
     for doc in relevant_docs:
         context += f"gmail_id: {doc.metadata['gmail_id']}\n"
+        context += f"gmail_id: {doc.metadata['received_At']}\n"
         context += doc.page_content  # ✅ subject is already inside page_content
         context += "\n\n---\n\n"
 
@@ -81,18 +83,21 @@ def llm_work(user_id: str):
         return []  # ✅ guard: nothing relevant found
 
     prompt = prompt_template(context)
-    response = structured_llm.invoke(prompt)
+    try:
+        response = structured_llm.invoke(prompt)
+    except Exception as e:
+        print(f"LLM structured output failed: {e}")
+        return []  # return empty instead of crashing
+
+    if not response or not response.deadlines:
+        return []
+
     results = []
-
-    
-
     for item in response.deadlines:
         item.urgency = calculate_urgency(item)
         doc = item.model_dump()
-
-        if isinstance(doc.get("deadline"), (str)) is False and doc.get("deadline"):
+        if isinstance(doc.get("deadline"), str) is False and doc.get("deadline"):
             doc["deadline"] = doc["deadline"].isoformat()
-
         results.append(doc)
 
     return results

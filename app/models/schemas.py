@@ -7,6 +7,7 @@ class Email(BaseModel):
     id : str
     subject : str
     body : str
+    receivedAt: str
 
 class EmailRequest(BaseModel):
     userId : str
@@ -28,6 +29,9 @@ def prompt_template(context):
 Today's date is {today}.
 
 You are an AI assistant that analyzes emails to detect time-sensitive information.
+Each email includes a "Received At" timestamp. When interpreting relative 
+date expressions like "tomorrow", "next Friday", "in 3 days", resolve them 
+relative to that email's "Received At" date, NOT today's date.
 
 Your task is to extract either:
 
@@ -73,7 +77,7 @@ If no DEADLINES or EVENTS exist in the emails,
 return exactly:
 
 {{
-  "items": []
+  "deadlines": []
 }}
 
 Do not return null values.

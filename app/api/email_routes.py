@@ -12,7 +12,7 @@ def check_root():
 @router.post('/store-emails')
 def emails_status(data : EmailRequest):
     data = store_emails(data)
-    print(data)
+    # print(data)
     return {
         "success" : True,
         "data" : data
