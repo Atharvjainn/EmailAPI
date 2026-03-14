@@ -8,6 +8,8 @@ class Email(BaseModel):
     subject : str
     body : str
     receivedAt: str
+    senderName : str
+    senderEmail : str
 
 class EmailRequest(BaseModel):
     userId : str
@@ -17,6 +19,8 @@ class Deadline(BaseModel):
   id : str = Field(description="The gmail_id of the email this deadline was extracted from")
   subject: str = Field(description="Email subject")
   deadline: date = Field(description="ISO date of deadline or event")
+  senderName : str = Field(description="Name of the email sender")
+  senderEmail : str = Field(description="Email address of the sender")
   types: Literal["Deadline","Event"] = Field(description="Specify whether it is an event or deadline")
   urgency: int = Field(description="Urgency from 1 to 10")
 

@@ -40,7 +40,9 @@ def store_emails(data):
                 metadata={
                     "gmail_id": email.id,
                     "subject": email.subject,
-                    "received_At": email.receivedAt  # ✅ store receivedAt in metadata
+                    "received_At": email.receivedAt,  # ✅ store receivedAt in metadata
+                    "senderName": email.senderName,  # ✅ store senderName in metadata
+                    "senderEmail": email.senderEmail  # ✅ store senderEmail in metadata
                 }
             )
         )
@@ -76,6 +78,8 @@ def llm_work(user_id: str):
     for doc in relevant_docs:
         context += f"gmail_id: {doc.metadata['gmail_id']}\n"
         context += f"gmail_id: {doc.metadata['received_At']}\n"
+        context += f"Sender Name: {doc.metadata['senderName']}\n"
+        context += f"Sender Email: {doc.metadata['senderEmail']}\n"
         context += doc.page_content  # ✅ subject is already inside page_content
         context += "\n\n---\n\n"
 
